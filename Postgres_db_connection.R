@@ -14,4 +14,7 @@ View(urb.mass)
 View(rur.mass)
 #want a db with mass of all urban recapture birds.
 #want to conver these mass db's from long to wide. 
-#want to figure out how to github all this!
+urb.recap.mass<-urb.mass[urb.mass$band_no1 %in% unique(urb.mass$band_no1[duplicated(urb.mass$band_no1)]),]
+urb.recap.mass$band_no2<-NULL
+urb.recap.mass.sort <-urb.recap.mass[order(urb.recap.mass$band_no1, urb.recap.mass$date_weighed),]
+urb.recap.mass.wide <-data.frame(cast(urb.recap.mass.sort,date_weighed, value = "mass", fun=mean))
