@@ -17,4 +17,6 @@ View(rur.mass)
 urb.recap.mass<-urb.mass[urb.mass$band_no1 %in% unique(urb.mass$band_no1[duplicated(urb.mass$band_no1)]),]
 urb.recap.mass$band_no2<-NULL
 urb.recap.mass.sort <-urb.recap.mass[order(urb.recap.mass$band_no1, urb.recap.mass$date_weighed),]
-urb.recap.mass.wide <-data.frame(cast(urb.recap.mass.sort,date_weighed, value = "mass", fun=mean))
+install.packages("reshape") 
+library(reshape)
+urb.recap.mass.wide <-data.frame(cast(urb.recap.mass.sort,urb.recap.mass.sort$date_weighed, value = "mass", fun=mean))
