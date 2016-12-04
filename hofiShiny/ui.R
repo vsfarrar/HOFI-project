@@ -1,22 +1,25 @@
-#Test File!
-shinyUI(fluidPage(
-  titlePanel("[Some dumb a** title here]"),
-  
-  #headerPanel("What's the difference between a title and a header?", windowTitle = "windowtitle?"),
-    #headerPanel feels redundant. 
-  
-  sidebarLayout(
-    sidebarPanel( 'This is the stupid sidebar',
-                  selectInput('element_ID',label = 'Choose one:', choices = c("Cat","Dog","none of the above")),
-                  br(),
-                  checkboxGroupInput("checkGroup", label = h3("Select one:"), choices = list("Choice 1" = 1, "Choice 2" = 2, "Choice 3" = 3),selected = 1)),
-    mainPanel("All the important sh**t in the main panel",
-              h3("Here's it's dumb title"),
-              p("And the bunch o'crap description that follows it"),
-              tabsetPanel(
-                tabPanel("Data", "[Data tables and stuff here]",
-                         dataTableOutput("myTable")),
-                tabPanel("Summary", "[Summary explanation here]"),
-                tabPanel("Plots", "[Pretty plots here]"))
-              )
-)))
+navbarPage("House Finch Feeder project",
+  tabPanel("About",
+    sidebarPanel(
+      checkboxGroupInput('plotpop', 'Population to show:',
+                         c("Urban (wild birds from ASU)"=pops[1],"Rural (captive birds from South Mtn)"=pops[2]),selected=pops),
+      checkboxGroupInput('plotsex', 'Sexes to show:',
+                         c("Males"=sexes[2],"Females"=sexes[1]))
+    ),
+    mainPanel(h3("The test text is:"),
+              textOutput("myText"), 
+              plotOutput("myPlot")
+      )
+  )
+
+  tabPanel("Data",
+    sidebarPanel(
+      checkboxGroupInput('popsub', 'Population to show:',
+        c("Urban (wild birds from ASU)"=pops[1],"Rural (captive birds from South Mtn)"=pops[2]),selected=pops),
+      checkboxGroupInput('sexsub', 'Sexes to show:',
+        c("Males"=sexes[2],"Females"=sexes[1]))
+    ),
+    mainPanel("Wide Data-table of all birds.",
+              DT::dataTableOutput("myTable"))
+    )
+)
