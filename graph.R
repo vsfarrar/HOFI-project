@@ -1,4 +1,4 @@
-rwild<-read.csv("urb_recap_mass_sort.csv", header = TRUE)
+rwild<-read.csv("C:/Users/Vicky-T/Documents/R/urb_recap_mass_sort.csv", header = TRUE)
 rwild$date_weighed=as.Date(rwild$date_weighed)
 rwild$week[rwild$date_weighed<="2016-01-13"]<-0
 rwild$week[rwild$date_weighed=="2016-01-14"]<-1
@@ -59,7 +59,7 @@ ggplot(data = rwild.l, aes(x=week,y=mass)) +
     annotate("rect",xmin=9,xmax=Inf,ymin=-Inf,ymax=Inf, fill ="red", alpha = 0.1),
     geom_line(aes(colour=ID)),
     geom_point(aes(colour=ID)),
-    scale_x_continuous(breaks=c(1:10), labels=c("Pre-study","1","2","3","4","5","6","7","8","9")),
+    scale_x_continuous(breaks=c(0:9), labels=c("Pre-study","1","2","3","4","5","6","7","8","9")),
     ylab("Mass(g)"),
     xlab("Week of the study"),
     theme(legend.position = "none"),

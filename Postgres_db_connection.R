@@ -17,6 +17,7 @@ View(rur.mass)
 #want a db with mass of all urban recapture birds.
 #want to conver these mass db's from long to wide. 
 urb.recap.mass<-urb.mass[urb.mass$band_no1 %in% unique(urb.mass$band_no1[duplicated(urb.mass$band_no1)]),]
+#this gets recaps only - excludes urban birds without repeated measures
 urb.recap.mass$band_no2<-NULL
 urb.recap.mass.sort <-urb.recap.mass[order(urb.recap.mass$band_no1, urb.recap.mass$date_weighed),]
 #sorts dataframe by band number and then date weighed. 
@@ -39,6 +40,7 @@ rwild$week[rwild$date_weighed=="2016-03-03"]<-8
 rwild$week[rwild$date_weighed=="2016-03-10"]<-9
 ##keep rwild$week numeric (not a factor for data.table functions)
 ##these values add a week categorical variable instead of dates
+#NOTE: These week values only valid for URBAN sampling weeks.See below for rural weeks.
 ##NOW to add missing weeks for birds without measurements at certain weeks
 rw2<-rwild
 library(data.table)
