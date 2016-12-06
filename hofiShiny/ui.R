@@ -33,11 +33,15 @@ navbarPage(
             checkboxGroupInput('plotpop', 'Population to show:',
                                c("Urban (wild birds from ASU)"=pops[1],"Rural (captive birds from South Mtn)"=pops[2])),
             checkboxGroupInput('plotsex', 'Sexes to show:',
-                               c("Males"=sexes[2],"Females"=sexes[1]))
+                               c("Males"=sexes[2],"Females"=sexes[1])),
+            checkboxInput("show.avg", "Show average line", TRUE)
            ),
            mainPanel(
-             uiOutput("plot")#depends on input
-             #plotOutput("myTestPlot")
+             uiOutput("plot"),#depends on input
+             br(),
+             p("Key to cycle period colors:"),
+             p(span("Clean feeders (bleached daily)", style="color:blue")),
+             p(span("Dirty feeders", style="color:red"))
            )
 )
 )

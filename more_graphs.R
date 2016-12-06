@@ -16,7 +16,8 @@ ggplot(mean_data,aes(x=week, y=mass, colour=sex)) +
   geom_line() + 
   geom_point()
 
-ggplot(mean_data, aes(x=week)) +
-  geom_line(aes(y=mass), colour=pop)
+ggplot(mean_data,aes(x=week,y=mass,colour=pop)) +
+  geom_line()+
+  geom_point()
   
 

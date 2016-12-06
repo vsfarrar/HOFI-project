@@ -23,6 +23,7 @@ function(input, output) {
       annotate("rect",xmin=7,xmax=9,ymin=-Inf,ymax=Inf, fill ="red", alpha = 0.1),
       annotate("rect",xmin=9,xmax=Inf,ymin=-Inf,ymax=Inf, fill ="blue", alpha = 0.1),
       NULL)
+    
  
     
     print(input$plotpop)
@@ -44,6 +45,7 @@ function(input, output) {
           theme(legend.position = "none"),
           NULL
         )+urb.panels
+        
     }
     else if(input$plotpop=="Rural"){
       p<-ggplot(data = (birdmass.l[(birdmass.l$pop %in% input$plotpop)&(birdmass.l$sex %in% input$plotsex),]), aes(x=week,y=mass)) +
@@ -74,6 +76,11 @@ function(input, output) {
           NULL
         )
     }
+    
+    if(input$show.avg==TRUE){ 
+      p<-p+ stat_summary(fun.y = mean, geom="line", size=1, linetype=5)
+    }
+    
     print(p)
   })
   #   output$myTestPlot<- renderPlot({
