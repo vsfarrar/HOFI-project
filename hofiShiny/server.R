@@ -102,6 +102,9 @@ function(input, output) {
   # 
   # })
   # 
+
+ 
+  
   output$myTable <- DT::renderDataTable(
     datatable(birdmass.w[(birdmass.w$pop %in% input$popsub)&(birdmass.w$sex %in% input$sexsub),]) 
   )
