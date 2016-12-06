@@ -53,11 +53,14 @@ colnames(birdmass.w)[3]<-c("pop")
 #long dataframe cleanup
 birdmass.l$ID<-as.numeric(factor(birdmass.l$band_no1,levels=unique(birdmass.l$band_no1)))
 birdmass.l$ID<-as.factor(birdmass.l$ID)
+birdmass.l$population<-as.factor(birdmass.l$population)
 #DATAFRAME READY FOR OPERATION!
 
 pops<-as.character(unique(unlist(birdmass.w$pop))) #creates list of pop variables
 sexes<-as.character(unique(unlist(birdmass.w$sex)))
 
-graphz<-function(x) ifelse(x=="Urban",print("Urban selected"),print("Rural selected"))
+#test function
+#graphz<-function(x) ifelse(x=="Urban",print("Urban selected"),print("Rural selected"))
+
 
 on.exit(dbDisconnect(con))
