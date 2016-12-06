@@ -1,6 +1,7 @@
 library(DT)
 library(ggplot2)
 library(shinythemes)
+library(rmarkdown)
 #access database
 library(RPostgreSQL)
 drv <- dbDriver("PostgreSQL")

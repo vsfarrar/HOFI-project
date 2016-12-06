@@ -26,7 +26,9 @@ navbarPage(
     conditionalPanel(
         condition="input.info=='goals'",
         h2("Study goals:"),
-        h3("We aimed to answer the question",em("Do bird feeders affect the health of wild birds?")),
+        h5("We aimed to answer the question:"),
+        h4(strong("Do bird feeders affect the health of wild birds?")),
+        HTML("<ul><li> Do rural birds respond differently to dirty feeders than urban birds? </li><li> How does feeder cleaning affect bird health?</li></ul>"),
         p("Urban birds are known to have higher disease loads, including intestinal parasites
           like coccidia and external infections, like avian pox (McGraw et al 2014) when compared to rural
           birds. Could this be due to bird feeders - artificial food sources that attract birds in large
@@ -44,7 +46,9 @@ navbarPage(
         rural birds used clean feeders that were bleached daily. Every 2 week cycle, 
         urban bird feeders were given to rural birds without cleaning, while urban birds
         recieved feeder cleaning daily. Every week we measured mass, pox, took microbiome
-        swabs, and collected fecal samples for coccidians.")
+        swabs, and collected fecal samples for coccidians."),
+     img(src = "experimentalDesign.png", height = 350, width = 600)
+
    ),
    conditionalPanel(
      condition="input.info=='follup'",
