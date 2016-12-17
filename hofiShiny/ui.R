@@ -67,7 +67,7 @@ navbarPage(
               DT::dataTableOutput("myTable")
               )#main
     ),#tab
-  tabPanel("Graphs",
+  tabPanel("Graphs :: Mass",
            sidebarPanel(
             checkboxGroupInput('plotpop', 'Population to show:',
                                c("Urban (wild birds from ASU)"=pops[1],"Rural (captive birds from South Mtn)"=pops[2])),
@@ -82,6 +82,20 @@ navbarPage(
              p(span("Clean feeders (bleached daily)", style="color:blue")),
              p(span("Dirty feeders", style="color:red"))
            )
+  ),#tab
+  tabPanel("Graphs:: Condition",
+      sidebarPanel(
+        radioButtons("graph","Graph Type:",
+                     c("Regression plot"="reg",
+                     "Violin plot"="viol")),
+        radioButtons("factor","Plot by:",
+                     c("Population" = "pop",
+                        "Sex" = "sex",
+                        "Cycle" = "cyc"))
+      ),
+      mainPanel(
+        uiOutput("residPlot")#depends on input
+      )
 ) #tab
 ) #navbarpage
 ) #fluidpage

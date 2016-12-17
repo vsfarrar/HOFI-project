@@ -26,7 +26,7 @@ function(input, output) {
     
  
     
-    print(input$plotpop)
+    print(input$plotpop) #checks length of vector for loop function...computer science checking stuff
   
     
     if(length(input$plotpop) == 1 && input$plotpop=="Urban"){
@@ -103,9 +103,99 @@ function(input, output) {
   # })
   # 
 
- 
+#RESIDUAL PLOTS
+  output$residPlot <- renderUI({
+    plotOutput("resP")
+  })
+  
+  output$resP <- renderPlot({
+   if(input$graph=="reg"){
+     resP<-ggplot(tarmass,aes(x=avg_tarsus,y=mass))+
+       list(
+         ylab("Mass(g)"),
+         xlab("Average tarsus length(mm)"),
+         ggtitle("Regression of mass vs tarsus"),
+         NULL
+       )
+   }else{
+     resP<-ggplot(tarmass, aes(x=population, y=residual)) 
+   }
+#factors   
+  if(input$factor=="pop" & input$graph=="reg"){
+    resP<-resP+
+      list(
+        geom_point(aes(color=population),size=3),
+        geom_smooth(method=lm,se=FALSE, color="black"),
+        scale_color_manual(values=c("limegreen","gray40")),
+        NULL
+      )
+  }
+  if(input$factor=="sex"& input$graph=="reg"){
+    resP<-resP+
+      list(
+        geom_point(aes(color=sex),size=3),
+        geom_smooth(method=lm,se=FALSE, color="black"),
+        scale_color_manual(values=c("magenta","blue")),
+        NULL
+      )
+  }
+  if(input$factor=="cyc"& input$graph=="reg"){
+      resP<-resP+
+        list(
+          geom_point(aes(color=cycle),size=3),
+          geom_smooth(method=lm,se=FALSE, color="black"),
+          scale_color_manual(values=c("turquoise","tan2")),
+          NULL
+        )
+    }
+  if(input$factor=="pop"& input$graph=="viol"){
+      resP<-resP+
+        list(
+          geom_violin(aes(fill=population),position=position_dodge(1)),
+          geom_dotplot(aes(color=population),binaxis='y', stackdir='center', dotsize=0.5, position=position_dodge(1), fill="black"),
+          geom_boxplot(aes(fill=population),width=0.1,position=position_dodge(1)),
+          scale_fill_manual(values=c("limegreen","gray40")),
+          xlab("Population"),
+          ylab("Condition index (Residuals)"),
+          ggtitle("Condition by population"),
+          NULL
+        )
+  }   
+  if(input$factor=="sex"& input$graph=="viol"){
+      resP<-resP+
+        list(
+          geom_violin(aes(fill=sex),position=position_dodge(1)),
+          geom_dotplot(aes(color=sex),binaxis='y', stackdir='center', dotsize=0.5, position=position_dodge(1), fill="black"),
+          geom_boxplot(aes(fill=sex),width=0.1,position=position_dodge(1)),
+          scale_fill_manual(values=c("purple","lightblue2")),
+          xlab("Population"),
+          ylab("Condition index (Residuals)"),
+          ggtitle("Condition by population and sex"),
+          NULL
+        )
+  }       
+    
+  if(input$factor=="cyc"& input$graph=="viol"){
+      resP<-resP+
+        list(
+          geom_violin(aes(fill=cycle),position=position_dodge(1)),
+          geom_dotplot(aes(color=cycle),binaxis='y', stackdir='center', dotsize=0.5, position=position_dodge(1), fill="black"),
+          geom_boxplot(aes(fill=cycle),width=0.1,position=position_dodge(1)),
+          scale_fill_manual(values=c("turquoise","tan2")),
+          xlab("Population"),
+          ylab("Condition index (Residuals)"),
+          ggtitle("Condition by population and cycle"),
+          NULL
+        )
+    }       
+    
+    
+    #coordflip
+    print(resP)
+  })
   
   output$myTable <- DT::renderDataTable(
     datatable(birdmass.w[(birdmass.w$pop %in% input$popsub)&(birdmass.w$sex %in% input$sexsub),]) 
+  
   )
 }
