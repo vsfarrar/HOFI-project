@@ -59,9 +59,9 @@ library(rmarkdown)
 # #DATAFRAME READY FOR OPERATION!
 
 #12/16/16 Operates from csv only - disconnected from postgreSQL database dependency.
-
-birmass.l<-read.csv("birdmass_long.csv", header=TRUE)
-birmass.w<-read.csv("birdmass_wide.csv", header=TRUE)
+tarmass<-read.csv("tarsusMass.csv", header=TRUE)
+birdmass.l<-read.csv("birdmass_long.csv", header=TRUE)
+birdmass.w<-read.csv("birdmass_wide.csv", header=TRUE)
 
 pops<-as.character(unique(unlist(birdmass.w$pop))) #creates list of pop variables
 sexes<-as.character(unique(unlist(birdmass.w$sex)))
