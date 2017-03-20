@@ -1,3 +1,21 @@
+#installs relevant packages if not already installed
+#packages: DT, ggplot2, shinythemes, rmarkdown
+if(!require(DT)){
+  install.packages("DT")
+  library(DT)
+}
+if(!require(ggplot2)){
+  install.packages("ggplot2")
+  library(ggplot2)
+}
+if(!require(shinythemes)){
+  install.packages("shinythemes")
+  library(shinythemes)
+}
+if(!require(rmarkdown)){
+  install.packages("rmarkdown")
+  library(rmarkdown)
+}
 library(DT)
 library(ggplot2)
 library(shinythemes)
