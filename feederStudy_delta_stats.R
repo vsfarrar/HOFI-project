@@ -33,6 +33,7 @@ delta$cycle[delta$Week==9]<-"clean2"
 delta$absdCond<-abs(delta$dCond)
 delta$absdCocc<-abs(delta$dCocc)
 
+#SUMMARY STATS
 #create stats dataframe for difference in condition, by cycle
 dCond.mean<-aggregate(dCond ~ cycle, FUN=mean, data=delta) #calculate mean diff per cycle
 dCond.sd<-aggregate(dCond ~ cycle, FUN=sd, data=delta) #calculate sd diff per cycle
@@ -50,27 +51,20 @@ names(dCocc.mean)[names(dCocc.mean)=="dCocc"]<-"dCocc.mean"
 dCocc.stats<-cbind(dCocc.mean,dCocc.sd) 
 dCocc.stats<-dCocc.stats[-c(3)] 
 
-#create a stats dataframe for ABSOLUTE value difference in coccidia, by cycle
-#same as above
-absdCocc.mean<-aggregate(absdCocc ~ cycle, FUN=mean, data=delta) 
-absdCocc.sd<-aggregate(absdCocc ~ cycle, FUN=sd, data=delta) 
-names(absdCocc.sd)[names(absdCocc.sd)=="absdCocc"]<-"absdCocc.sd"
-names(dCocc.mean)[names(dCocc.mean)=="absdCocc"]<-"absdCocc.mean" 
-absdCocc.stats<-cbind(absdCocc.mean,absdCocc.sd) 
-absdCocc.stats<-absdCocc.stats[-c(3)] 
-
-#same as above
-absdCond.mean<-aggregate(absdCond ~ cycle, FUN=mean, data=delta) 
-absdCond.sd<-aggregate(absdCond ~ cycle, FUN=sd, data=delta) 
-names(absdCond.sd)[names(absdCond.sd)=="absdCond"]<-"absdCond.sd"
-names(dCond.mean)[names(dCond.mean)=="absdCond"]<-"absdCond.mean" 
-absdCond.stats<-cbind(absdCond.mean,absdCond.sd) 
-absdCond.stats<-absdCond.stats[-c(3)]
+#(removed absolute value stats) 
 
 #create overall dStats dataframe
-dStats<-cbind(dCond.stats,dCocc.stats,absdCond.stats,absdCocc.stats)
+dStats<-cbind(dCond.stats,dCocc.stats)
 dStats<-dStats[-c(4,7,10)] #removes excess label columns
 
+#CONFIDENCE INTERVALS
+dStats$dCond.ll<-dStats$dCond.mean-2*dStats$dCond.sd
+dStats$dCond.ul<-dStats$dCond.mean+2*dStats$dCond.sd
+dStats$dCocc.ll<-dStats$dCocc.mean-2*dStats$dCocc.sd
+dStats$dCocc.ul<-dStats$dCocc.mean+2*dStats$dCocc.sd
+
+dStats$week<-c(2,4,1,3) #defines weeks for dStats
+  
 #for sorting cycles in correct chronological order during graphing 
 #otherwise, use "Week" to sort
 dStats$cycleNo[dStats$cycle=="dirty1"]<-1
@@ -78,8 +72,12 @@ dStats$cycleNo[dStats$cycle=="clean1"]<-2
 dStats$cycleNo[dStats$cycle=="dirty2"]<-3
 dStats$cycleNo[dStats$cycle=="clean2"]<-4
 
+delta<-delta[!(delta$Week=="1"),]  #gets rid of week 1 "0" values that skew distributions
+dStats<-dStats[!(dStats$cycle==0),]  #same for dStats summary table
+
+
 #GRAPHS
-# library(ggplot2)
+library(ggplot2)
 # ggplot(dStats, aes(x=cycleNo, y=dCond.mean)) + 
 #   geom_bar(position=position_dodge(), stat="identity") 
 # 
@@ -94,3 +92,55 @@ delta$Week<-as.factor(delta$Week)
 #boxplots of change in condition and change in coccidia
 ggplot(delta, aes(x=Week, y=dCond, fill=FeederStatus)) + geom_boxplot() + ylab("Change in Condition")
 ggplot(delta, aes(x=Week, y=dCocc, fill=FeederStatus)) + geom_boxplot() + ylab("Change in Coccidia score")
+
+#histograms 
+#change in condition, looks ~ normal, left skewed
+ggplot(delta, aes(x=dCond)) + geom_histogram(bins=30,colour="black", fill="white") +xlab("Change in Condition")
+#change in coccidia, ~normal around 0 (but discrete)
+ggplot(delta, aes(x=dCocc)) + geom_histogram(bins=30,colour="black", fill="white") +xlab("Change in Coccidia score")
+
+#histogram with density plot for change in condition
+ggplot(delta, aes(x=dCond)) + 
+  geom_histogram(aes(y=..density..),      
+                 binwidth=.5,
+                 colour="black", fill="white") +
+  geom_density(alpha=.2, fill="#FF6666") 
+
+#bar plots with confidence intervals 
+#condition
+ggplot(dStats, aes(x=week, y=dCond.mean, fill=cycle)) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=dCond.ll, ymax=dCond.ul),
+                width=.2,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Change in Body condition")+
+  xlab("Week")
+#coccidia
+ggplot(dStats, aes(x=week, y=dCocc.mean, fill=cycle)) + 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin=dCocc.ll, ymax=dCocc.ul),
+                width=.2,                    # Width of the error bars
+                position=position_dodge(.9)) + 
+  ylab("Change in Coccidia score")+
+  xlab("Week")
+
+#STATS
+library(nlme)
+library(lme4)
+library(car)
+#siginficant for week, but not FeederStatus or the interaction
+f1 <- lmer(dCond ~ FeederStatus*factor(Week) + (1|ID), #delta dataframe does not give other random variables
+           data=delta)  #interaction with week, or time?
+summary(f1)
+Anova(f1, type="3")
+
+#no significant effect for either
+f2 <- lmer(dCocc ~ FeederStatus*factor(Week) + (1|ID), #delta dataframe does not give other random variables
+           data=delta)  #interaction with week, or time?
+summary(f2)
+Anova(f2, type="3")
+
+#plain jane ANOVAs show no effect of either feeder status or week
+#mean difference not significant across cycles
+summary(aov(dCond ~ FeederStatus*Week + Error(ID), data = delta))
+summary(aov(dCocc ~ FeederStatus*Week + Error(ID), data = delta))
