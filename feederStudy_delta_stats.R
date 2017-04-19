@@ -21,6 +21,7 @@ new.birds<-new.birds %>%
   mutate(dCocc = Coccidia  - lag(Coccidia, default = Coccidia[1]))
 
 #COULD DO THIS IN ORIGINAL new.birds DATAFRAME
+#(did in the stats section)
 #create new dataframe with only "delta" or "difference" variables 
 delta<-new.birds[,c(1,3,4,15,16)]
 #create column with key to what each difference variable refers to 
@@ -125,22 +126,30 @@ ggplot(dStats, aes(x=week, y=dCocc.mean, fill=cycle)) +
   xlab("Week")
 
 #STATS
+#done in new.birds original dataset for full functionality of random effects
 library(nlme)
 library(lme4)
 library(car)
-#siginficant for week, but not FeederStatus or the interaction
-f1 <- lmer(dCond ~ FeederStatus*factor(Week) + (1|ID), #delta dataframe does not give other random variables
-           data=delta)  #interaction with week, or time?
+
+#create absolute value changes for condition and coccidia 
+new.birds$absdCocc<-abs(new.birds$dCocc)
+new.birds$absdCond<-abs(new.birds$dCond)
+
+#histograms to view distributions of these values
+hist(new.birds$dCond)
+hist(new.birds$dCocc)
+hist(new.birds$absdCocc)
+hist(new.birds$absdCond)
+
+#linear models, except absdCocc, which is binomial 
+#Anovas
+f1<-lmer(dCond ~ FeederStatus*Week + (1|ID) + (1|Replicate) + (1|CageNumber), data = new.birds)
 summary(f1)
-Anova(f1, type="3")
+Anova(f1)
+f2<-lmer(dCocc ~ FeederStatus*Week + (1|ID) + (1|Replicate) + (1|CageNumber), data = new.birds)
+f3<-glmer(absdCocc ~ FeederStatus*Week + (1|ID) + (1|Replicate) + (1|CageNumber),family = 
+            "poisson", data = new.birds)
+Anova(f1) #significant interaction between status and week
+Anova(f2) #none significant
+Anova(f3) #significant effect of feeder status and week, not interaction - no info on direction of coccidians
 
-#no significant effect for either
-f2 <- lmer(dCocc ~ FeederStatus*factor(Week) + (1|ID), #delta dataframe does not give other random variables
-           data=delta)  #interaction with week, or time?
-summary(f2)
-Anova(f2, type="3")
-
-#plain jane ANOVAs show no effect of either feeder status or week
-#mean difference not significant across cycles
-summary(aov(dCond ~ FeederStatus*Week + Error(ID), data = delta))
-summary(aov(dCocc ~ FeederStatus*Week + Error(ID), data = delta))
