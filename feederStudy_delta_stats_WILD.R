@@ -3,7 +3,7 @@
 #Used below to create the current wild_birds.csv file.
 # #import data
 # birds<-read.csv(file.choose()) #use Pierce's file Wild_feeder_analysis.csv
-# #random number generator - to sort 
+# #random number generator - to sort and select only one reading from recapped birds.
 # birds$randomID <- sample(100, size = nrow(birds), replace = TRUE)
 # #sort samples by random ID
 # birds<-birds[with(birds, order(ID, randomID)), ]
@@ -13,27 +13,28 @@
 # birds<-birds[!is.na(birds$Tarsus),]
 # write.csv(birds, file ="wild_birds.csv")
 
+#ISSUE: did I create condition variable from ALL wild birds (correct) or just the subset(incorrect, would alter the regressions)
+
 #import data
 birds<-read.csv(file.choose()) #use wild_birds.csv
-#calculate condition
-Condit <- lm(Mass ~ Tarsus, data=birds, na.action=na.exclude)
-#put residuals in dataframe
-birds$Condition <- residuals(Condit)
+
+
+#NOTES: 
+#week 1 actually = week 0 (pre-study), feeders were "dirty"
+#fixed week and feeder status to correct for wild birds in wild_birds.csv file
+
 
 #new dataframe with only these weeks included (labeled by cycle)
-new.birds <-birds[which((birds$Week ==1 & birds$FeederStatus == "Clean") |
-                          (birds$Week ==3 & birds$FeederStatus == "Dirty")|
-                          (birds$Week ==5 & birds$FeederStatus == "Clean")|
-                          (birds$Week ==7 & birds$FeederStatus == "Dirty")|
-                          (birds$Week ==9 & birds$FeederStatus == "Clean")),]
+new.birds <-birds[which((birds$Week ==2 & birds$FeederStatus == "Clean") |
+                          (birds$Week ==4 & birds$FeederStatus == "Dirty")|
+                          (birds$Week ==6 & birds$FeederStatus == "Clean")|
+                          (birds$Week ==8 & birds$FeederStatus == "Dirty")),]
+#count sample sizes for each group
+#why are the sample sizes so low??
+table(new.birds$Week)
 
-#used dplyr package to produce "difference" or "delta" values in Condition and Coccidia
-#between each row and the row before it 
-require(dplyr)
-new.birds<-new.birds %>% 
-  group_by(ID) %>%
-  mutate(dCond = Condition - lag(Condition, default = Condition[1])) %>%
-  mutate(dCocc = Coccidia  - lag(Coccidia, default = Coccidia[1]))
+#ISSUE: can only calculate differences between average Coccidia and average Condition for wild birds.
+aggregate(Condition~Week,data=new.birds,mean)
 
 #COULD DO THIS IN ORIGINAL new.birds DATAFRAME
 #(did in the stats section)
