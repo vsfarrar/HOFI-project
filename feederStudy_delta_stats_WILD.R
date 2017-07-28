@@ -1,12 +1,27 @@
+
+
+#Used below to create the current wild_birds.csv file.
+# #import data
+# birds<-read.csv(file.choose()) #use Pierce's file Wild_feeder_analysis.csv
+# #random number generator - to sort 
+# birds$randomID <- sample(100, size = nrow(birds), replace = TRUE)
+# #sort samples by random ID
+# birds<-birds[with(birds, order(ID, randomID)), ]
+# #get rid of duplicate IDs, keeping only the first ID in random order
+# birds<-birds[ !duplicated(birds$ID), ]
+# #removing empty Tarsus rows
+# birds<-birds[!is.na(birds$Tarsus),]
+# write.csv(birds, file ="wild_birds.csv")
+
 #import data
-birds<-read.csv(file.choose()) #use Pierce's file Captive_feeder_analysis.csv
+birds<-read.csv(file.choose()) #use wild_birds.csv
 #calculate condition
 Condit <- lm(Mass ~ Tarsus, data=birds, na.action=na.exclude)
 #put residuals in dataframe
 birds$Condition <- residuals(Condit)
 
 #new dataframe with only these weeks included (labeled by cycle)
-new.birds <-birds[which((birds$Week ==1 & birds$FeederStatus == "Dirty") |
+new.birds <-birds[which((birds$Week ==1 & birds$FeederStatus == "Clean") |
                           (birds$Week ==3 & birds$FeederStatus == "Dirty")|
                           (birds$Week ==5 & birds$FeederStatus == "Clean")|
                           (birds$Week ==7 & birds$FeederStatus == "Dirty")|
