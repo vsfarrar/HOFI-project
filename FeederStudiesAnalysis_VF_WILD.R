@@ -35,6 +35,8 @@ fwild$time[fwild$Week==6]<-"2"
 fwild$time[fwild$Week==7]<-"2"
 fwild$time[fwild$Week==8]<-"2"
 
+#write updated fwild datatable to a file
+write.csv(fwild,file="~/Documents/side projects/wild_feeder_study_edited.csv")
 #load modules
 library(lme4)
 library(nlme)
@@ -48,7 +50,10 @@ Anova(f3)
 Anova(lmer(Condition ~ FeederStatus*Week + (1|Date), data = uniqWild)) #using only unique reads (no RECAPs)
 #no matter how you slice the cake, Week is significant, FeederStatus is not. No interaction
 f4 <- lmer(Condition ~ FeederStatus*time + (1|ID),data=fwild)
+#here, FeederStatus becomes significant - why??? Why wasn't it significant before?
+#Time also signficant
 f5 <- lmer(Coccidia ~ FeederStatus*time + (1|ID), data=fwild)
+#no significant interaction of time or status on coccidians
 
 #Pierce's method for visualizing the time component
 lsmeans(f4, list(pairwise ~ FeederStatus|time))
@@ -79,9 +84,13 @@ fwild.data$Week=as.factor(fwild.data$Week)
 head(fwild.data)
 fwild.data2 <-data_summary(fwild, varname="Coccidia",
                            groupnames=c("FeederStatus", "time"))
+#import summarySE formula from here: summarySE.R
+fwild.ci<-summarySE(fwild, measurevar="Condition", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Condition
+fwild.ci2<-summarySE(fwild, measurevar="Coccidia", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Coccidians
 
 #ggplot GRAPHS
 library(ggplot2)
+#bar graph (means, sd)
 p<-ggplot(fwild.data, aes(x=Week, y=Condition, fill=FeederStatus)) + 
   geom_bar(stat="identity", color="black", 
            position=position_dodge()) +
@@ -92,6 +101,18 @@ p2<-ggplot(fwild.data, aes(x=FeederStatus, y=Condition, fill=FeederStatus)) +
   geom_bar(stat="summary", color="black", 
            position=position_dodge(), fun.y= mean) 
 print(p2)
+#boxplot (median, variance)
+fwild$Week<-as.factor(fwild$Week)
+p3<-ggplot(fwild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot()
+print(p3)
+
+pd <- position_dodge(0.1)
+#condition with confidence intervals
+p4<-ggplot(fwild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) + 
+  geom_errorbar(aes(ymin=Condition-ci, ymax=Condition+ci), width=.2,
+                position=pd) +
+  geom_point(position=pd)
+print(p4)
 
 #coccidia graph
 ggplot(fwild.data2, aes(x=FeederStatus, y=Coccidia, fill=time)) + 
@@ -99,3 +120,14 @@ ggplot(fwild.data2, aes(x=FeederStatus, y=Coccidia, fill=time)) +
            position=position_dodge()) +
   geom_errorbar(aes(ymin=Coccidia, ymax=Coccidia+sd), width=.2,
                 position=position_dodge(.9)) 
+#coccidia boxplot
+ggplot(fwild, aes(x=Week, y=Coccidia, fill=FeederStatus)) + geom_boxplot()
+#coccidia line graph
+p6<-ggplot(fwild.ci2, aes(x=Week, y=Coccidia, colour=FeederStatus)) + 
+  geom_errorbar(aes(ymin=Coccidia-ci, ymax=Coccidia+ci), width=.2,
+                position=pd) +
+  geom_point(position=pd)
+print(p6)
+
+
+lsmeans::lsmeans(f3,list(pairwise ~ Week))
