@@ -1,0 +1,123 @@
+
+#Testing loading a package
+```{r, include=FALSE}
+library(ggplot2)
+library(lme4)
+library(nlme)
+library(car)
+library(lsmeans)
+library(lmerTest)
+```
+##Statistical analyses
+###Wild, urban population  
+For each bird, calculated the condition as a regression of mass and tarsus length, using the following formula: 
+`Condit<-lm(Mass~Tarsus)`
+```{r, echo=FALSE}
+fwild<-read.csv(file="~/Documents/side projects/Wild_feeder cleaning_analysis_corrected.csv")
+Condit <- lm(Mass ~ Tarsus, data=fwild, na.action=na.exclude)
+#significant and positive - good
+summary(Condit)
+#put residuals in dataframe
+fwild$Condition <- residuals(Condit)
+```
+Because some wild birds were recaptures and sampled more than once, I then used a random number generator in R to create a random ID and select one data point, randomly, from birds with more than one data point during the study.
+This then changed the sample size between the weeks. The table below shows the week # (first row) with sample size below. 
+```{r, echo=FALSE} 
+#UNIQUE ID SORTING WITH RANDOM NUMBERS
+#to analyse with only one measurement per bird, randomly chosen...
+#HAVE ALREADY CALCULATED CONDITION BEFORE THIS STEP!
+#random number generator - to sort and select only one reading from recapped birds.
+fwild$randomID <- sample(100, size = nrow(fwild), replace = TRUE)
+#sort samples by random ID
+uniqWild<-fwild[with(fwild, order(ID, randomID)), ]
+#get rid of duplicate IDs, keeping only the first ID in random order
+uniqWild<-uniqWild[ !duplicated(uniqWild$ID), ]
+#count sample size per week
+table(uniqWild$Week)
+```
+```{r, echo=FALSE}
+#USING CYCLE TIME instead of WEEK
+fwild$time<-0
+fwild$time[fwild$Week==0]<-"NA"
+fwild$time[fwild$Week==1]<-"1"
+fwild$time[fwild$Week==2]<-"1"
+fwild$time[fwild$Week==3]<-"1"
+fwild$time[fwild$Week==4]<-"1"
+fwild$time[fwild$Week==5]<-"2"
+fwild$time[fwild$Week==6]<-"2"
+fwild$time[fwild$Week==7]<-"2"
+fwild$time[fwild$Week==8]<-"2"
+#write updated fwild datatable to a file
+write.csv(fwild,file="~/Documents/side projects/wild_feeder_study_edited.csv")
+```
+```{r, echo=FALSE}
+#GRAPHS
+#The following code summarizes the data, using a custom function, and generates the values needed for confidence intervals, standard errors, etc. used in graph functions. 
+#summarize data function (defines the function)
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+#running data summary function
+fwild.data <- data_summary(fwild, varname="Condition", 
+                    groupnames=c("FeederStatus", "Week"))
+# Convert Week to a factor variable
+fwild.data$Week=as.factor(fwild.data$Week)
+#head(fwild.data)  #uncomment this to verify the function is working
+fwild.data2 <-data_summary(fwild, varname="Coccidia",
+                           groupnames=c("FeederStatus", "time"))
+#import summarySE formula from here: summarySE.R
+fwild.ci<-summarySE(fwild, measurevar="Condition", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Condition
+fwild.ci2<-summarySE(fwild, measurevar="Coccidia", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Coccidians
+```
+The below graphs show the trend of body condition in the wild-caught birds over the course of the study. 
+```{r, echo=FALSE}
+#ggplot GRAPHS
+library(ggplot2)
+#boxplot (median, variance) Condition by FeederStatus
+fwild$Week<-as.factor(fwild$Week)
+p3<-ggplot(fwild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot() +
+  ggtitle("Body condition by week (wild, urban birds)", subtitle = "Boxplots: central lines represent median")
+print(p3)
+
+pd <- position_dodge(0.1) 
+#condition with confidence intervals
+p4<-ggplot(fwild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) + 
+  geom_errorbar(aes(ymin=Condition-ci, ymax=Condition+ci), width=.2,
+                position=pd) +
+  geom_point(position=pd) +
+  ggtitle("Body condition by week (wild, urban birds)", subtitle = "Means, error bars represent 95% confidence intervals")
+print(p4)
+```
+A type-II ANOVA, using unique bird IDs only (no recapture data included), shows a significant effect of week on body condition, but _not_ feeder status. Additionally, there is no significant interaction between feeder status and week, suggesting the effect is of time, but not the feeder treatment "cycle" number. 
+```{r, echo=FALSE}
+Anova(lmer(Condition ~ FeederStatus*Week + (1|Date), data = uniqWild)) 
+```
+
+Next are plots of coccidia occurence in the wild,urban population across the study. 
+Coccidia was collected from fecal samples and was scored from 0 - 4. 
+```{r,echo=FALSE}
+#coccidia boxplot
+p5<-ggplot(fwild, aes(x=Week, y=Coccidia, fill=FeederStatus)) + geom_boxplot()+
+  ggtitle("Coccidia by Week (wild, urban birds)", subtitle = "Boxplots with medians")
+print(p5)
+#coccidia line graph
+p6<-ggplot(fwild.ci2, aes(x=Week, y=Coccidia, colour=FeederStatus)) + 
+  geom_errorbar(aes(ymin=Coccidia-ci, ymax=Coccidia+ci), width=.2,
+                position=pd) +
+  geom_point(position=pd) +
+  ylim(0,4) + 
+  ggtitle("Coccidia by Week (wild, urban birds)", subtitle ="Means with 95% confidence intervals")
+print(p6)
+```
+
+```{r, echo=FALSE}
+Anova(lmer(Condition ~ FeederStatus*Week + (1|Date), data = uniqWild)) 
+```
