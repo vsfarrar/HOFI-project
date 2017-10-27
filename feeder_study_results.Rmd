@@ -26,6 +26,8 @@ This then changed the sample size between the weeks. The table below shows the w
 #UNIQUE ID SORTING WITH RANDOM NUMBERS
 #to analyse with only one measurement per bird, randomly chosen...
 #HAVE ALREADY CALCULATED CONDITION BEFORE THIS STEP!
+
+#THIS STEP WILL RE-DO EVERY TIME IF ALLOWED TO, CHANGING THE DATASET. uniqWild dataset should be made permanent at some point. 
 #random number generator - to sort and select only one reading from recapped birds.
 fwild$randomID <- sample(100, size = nrow(fwild), replace = TRUE)
 #sort samples by random ID
@@ -47,6 +49,18 @@ fwild$time[fwild$Week==5]<-"2"
 fwild$time[fwild$Week==6]<-"2"
 fwild$time[fwild$Week==7]<-"2"
 fwild$time[fwild$Week==8]<-"2"
+
+uniqWild$time<-0
+uniqWild$time[uniqWild$Week==0]<-"0"
+uniqWild$time[uniqWild$Week==1]<-"1"
+uniqWild$time[uniqWild$Week==1]<-"1"
+uniqWild$time[uniqWild$Week==3]<-"1"
+uniqWild$time[uniqWild$Week==4]<-"1"
+uniqWild$time[uniqWild$Week==5]<-"2"
+uniqWild$time[uniqWild$Week==6]<-"2"
+uniqWild$time[uniqWild$Week==7]<-"2"
+uniqWild$time[uniqWild$Week==8]<-"2"
+
 #write updated fwild datatable to a file
 write.csv(fwild,file="~/Documents/side projects/wild_feeder_study_edited.csv")
 ```
@@ -68,14 +82,21 @@ data_summary <- function(data, varname, groupnames){
 #running data summary function
 fwild.data <- data_summary(fwild, varname="Condition", 
                     groupnames=c("FeederStatus", "Week"))
+uniqWild.data <- data_summary(uniqWild, varname="Condition", 
+                    groupnames=c("FeederStatus", "Week"))
 # Convert Week to a factor variable
 fwild.data$Week=as.factor(fwild.data$Week)
+uniqWild.data$Week=as.factor(uniqWild.data$Week)
 #head(fwild.data)  #uncomment this to verify the function is working
 fwild.data2 <-data_summary(fwild, varname="Coccidia",
+                           groupnames=c("FeederStatus", "time"))
+uniqWild.data2 <-data_summary(uniqWild, varname="Coccidia",
                            groupnames=c("FeederStatus", "time"))
 #import summarySE formula from here: summarySE.R
 fwild.ci<-summarySE(fwild, measurevar="Condition", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Condition
 fwild.ci2<-summarySE(fwild, measurevar="Coccidia", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Coccidians
+uniqWild.ci<-summarySE(uniqWild, measurevar="Condition", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Condition
+uniqWild.ci2<-summarySE(uniqWild, measurevar="Coccidia", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Coccidians
 ```
 The below graphs show the trend of body condition in the wild-caught birds over the course of the study. 
 ```{r, echo=FALSE}
@@ -87,6 +108,11 @@ p3<-ggplot(fwild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot() 
   ggtitle("Body condition by week (wild, urban birds)", subtitle = "Boxplots: central lines represent median")
 print(p3)
 
+uniqWild$Week<-as.factor(uniqWild$Week)
+p3a<-ggplot(uniqWild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot() +
+  ggtitle("Body condition by week [Unique wild birds]", subtitle = "Boxplots: central lines represent median ")
+print(p3a)
+
 pd <- position_dodge(0.1) 
 #condition with confidence intervals
 p4<-ggplot(fwild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) + 
@@ -95,10 +121,18 @@ p4<-ggplot(fwild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) +
   geom_point(position=pd) +
   ggtitle("Body condition by week (wild, urban birds)", subtitle = "Means, error bars represent 95% confidence intervals")
 print(p4)
+
+p4a<-ggplot(uniqWild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) + 
+  geom_errorbar(aes(ymin=Condition-ci, ymax=Condition+ci), width=.2,
+                position=pd) +
+  geom_point(position=pd) +
+  ggtitle("Body condition by week [Unique wild birds]", subtitle = "Means, error bars represent 95% confidence intervals")
+print(p4a)
 ```
 A type-II ANOVA, using unique bird IDs only (no recapture data included), shows a significant effect of week on body condition, but _not_ feeder status. Additionally, there is no significant interaction between feeder status and week, suggesting the effect is of time, but not the feeder treatment "cycle" number. 
 ```{r, echo=FALSE}
-Anova(lmer(Condition ~ FeederStatus*Week + (1|Date), data = uniqWild)) 
+Anova(lm(Condition ~ FeederStatus*Week, data = uniqWild))
+Anova(lmer(Condition~FeederStatus*Week + (1|ID) +(1|time), data=fwild))
 ```
 
 Next are plots of coccidia occurence in the wild,urban population across the study. 
@@ -119,5 +153,6 @@ print(p6)
 ```
 
 ```{r, echo=FALSE}
-Anova(lmer(Condition ~ FeederStatus*Week + (1|Date), data = uniqWild)) 
+Anova(lm(Coccidia ~ FeederStatus*Week, data = uniqWild)) 
+Anova(lmer(Coccidia ~ FeederStatus*Week + (1|ID), data=fwild))
 ```
