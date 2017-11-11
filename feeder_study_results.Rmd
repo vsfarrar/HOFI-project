@@ -93,6 +93,41 @@ fwild.data2 <-data_summary(fwild, varname="Coccidia",
 uniqWild.data2 <-data_summary(uniqWild, varname="Coccidia",
                            groupnames=c("FeederStatus", "time"))
 #import summarySE formula from here: summarySE.R
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
 fwild.ci<-summarySE(fwild, measurevar="Condition", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Condition
 fwild.ci2<-summarySE(fwild, measurevar="Coccidia", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Coccidians
 uniqWild.ci<-summarySE(uniqWild, measurevar="Condition", groupvars=c("Week", "FeederStatus"), na.rm=TRUE) #Condition
@@ -108,10 +143,10 @@ p3<-ggplot(fwild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot() 
   ggtitle("Body condition by week (wild, urban birds)", subtitle = "Boxplots: central lines represent median")
 print(p3)
 
-uniqWild$Week<-as.factor(uniqWild$Week)
-p3a<-ggplot(uniqWild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot() +
-  ggtitle("Body condition by week [Unique wild birds]", subtitle = "Boxplots: central lines represent median ")
-print(p3a)
+# uniqWild$Week<-as.factor(uniqWild$Week)
+# p3a<-ggplot(uniqWild, aes(x=Week, y=Condition, fill=FeederStatus)) + geom_boxplot() +
+#   ggtitle("Body condition by week [Unique wild birds]", subtitle = "Boxplots: central lines represent median ")
+# print(p3a)
 
 pd <- position_dodge(0.1) 
 #condition with confidence intervals
@@ -122,19 +157,28 @@ p4<-ggplot(fwild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) +
   ggtitle("Body condition by week (wild, urban birds)", subtitle = "Means, error bars represent 95% confidence intervals")
 print(p4)
 
-p4a<-ggplot(uniqWild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) + 
-  geom_errorbar(aes(ymin=Condition-ci, ymax=Condition+ci), width=.2,
-                position=pd) +
-  geom_point(position=pd) +
-  ggtitle("Body condition by week [Unique wild birds]", subtitle = "Means, error bars represent 95% confidence intervals")
-print(p4a)
+# p4a<-ggplot(uniqWild.ci, aes(x=Week, y=Condition, colour=FeederStatus)) + 
+#   geom_errorbar(aes(ymin=Condition-ci, ymax=Condition+ci), width=.2,
+#                 position=pd) +
+#   geom_point(position=pd) +
+#   ggtitle("Body condition by week [Unique wild birds]", subtitle = "Means, error bars represent 95% confidence intervals")
+# print(p4a)
 ```
 A type-II ANOVA, using unique bird IDs only (no recapture data included), shows a significant effect of week on body condition, but _not_ feeder status. Additionally, there is no significant interaction between feeder status and week, suggesting the effect is of time, but not the feeder treatment "cycle" number. 
 ```{r, echo=FALSE}
 Anova(lm(Condition ~ FeederStatus*Week, data = uniqWild))
-Anova(lmer(Condition~FeederStatus*Week + (1|ID) +(1|time), data=fwild))
+Anova(lmer(Condition ~ FeederStatus*Week + (1|ID) +(1|time), data=fwild))
 ```
-
+Using likelihood tests of mixed models, time (cycle number 1 or 2) significantly affects body condition, compared to the reduced null model. However, incorporating feeder status as a fixed effect does not significantly increase likelihood. Additionally, no interaction between feeder status and time is significant. 
+```{r,echo=FALSE}
+wild.red<- lmer(Condition ~ 1 + (1|ID) + (1|Week) , data=fwild, REML=FALSE)
+wild.null<-lmer(Condition ~ time + (1|ID) + (1|Week), data=fwild,REML=FALSE)
+wild1<-lmer(Condition ~ FeederStatus + time+ (1|ID) + (1|Week), data=fwild,REML=FALSE)
+wild2<-lmer(Condition ~ FeederStatus*time+ (1|ID) + (1|Week), data=fwild,REML=FALSE)
+anova(wild.red,wild.null)
+anova(wild1, wild.null)
+anova(wild2, wild1)
+```
 Next are plots of coccidia occurence in the wild,urban population across the study. 
 Coccidia was collected from fecal samples and was scored from 0 - 4. 
 ```{r,echo=FALSE}
@@ -151,8 +195,13 @@ p6<-ggplot(fwild.ci2, aes(x=Week, y=Coccidia, colour=FeederStatus)) +
   ggtitle("Coccidia by Week (wild, urban birds)", subtitle ="Means with 95% confidence intervals")
 print(p6)
 ```
-
+Using model likelihood ratio test, cycle number (time) showed a trend towards affecting coccidia load, however, this was not significant. Feeder status did not significantly affect coccidia load, and there was no significant interaction between feeder status and cycle number. 
 ```{r, echo=FALSE}
-Anova(lm(Coccidia ~ FeederStatus*Week, data = uniqWild)) 
-Anova(lmer(Coccidia ~ FeederStatus*Week + (1|ID), data=fwild))
+cocc.red<- lmer(Coccidia ~ 1 + (1|ID) + (1|Week), data=fwild, REML=FALSE)
+cocc.null<- lmer(Coccidia ~ time + (1|ID) + (1|Week), data=fwild, REML=FALSE)
+cocc1<- lmer(Coccidia ~ FeederStatus + time + (1|ID) + (1|Week), data=fwild, REML=FALSE)
+cocc2<- lmer(Coccidia ~ FeederStatus*time + (1|ID) + (1|Week), data=fwild, REML=FALSE)
+anova(cocc.red, cocc.null)
+anova(cocc.null, cocc1)
+anova(cocc1, cocc2)
 ```
